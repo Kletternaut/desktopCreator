@@ -308,13 +308,13 @@ void MainWindow::onInstallSystem()
     }
 
     QProcess proc;
-    proc.start("sudo", { "cp", tmpPath, dest });
-    proc.waitForFinished(10000);
+    proc.start("pkexec", { "cp", tmpPath, dest });
+    proc.waitForFinished(30000);
     QFile::remove(tmpPath);
 
     if (proc.exitCode() != 0) {
         QMessageBox::critical(this, tr("Fehler"),
-            tr("Systemweite Installation fehlgeschlagen (sudo benötigt):\n%1").arg(
+            tr("Systemweite Installation fehlgeschlagen:\n%1").arg(
                 QString::fromLocal8Bit(proc.readAllStandardError())));
         return;
     }
