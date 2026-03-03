@@ -29,3 +29,6 @@ install_manifest.txt
 # Copilot / interne Entwicklungsdaten
 copilot.prompt/
 PROGRESS.md
+
+# VS Code Local History
+.history/
