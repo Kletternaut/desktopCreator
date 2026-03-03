@@ -418,7 +418,6 @@ void DesktopEntry::reset()
     m_localized.clear();
     m_actions.clear();
     m_customFields.clear();
-    emit entryChanged();
 }
 
 // ── Hilfsmethoden ────────────────────────────────────────────────────────────

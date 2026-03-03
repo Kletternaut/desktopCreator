@@ -126,11 +126,11 @@ void IconConverter::setupUi()
     connect(m_installButton, &QPushButton::clicked, this, &IconConverter::onConvertAndInstall);
     mainLayout->addWidget(m_installButton);
 
-    m_refreshCacheButton = new QPushButton(tr("Icon-Cache aktualisieren"), this);
+    m_refreshCacheButton = new QPushButton(tr("Icon-Cache aktualisieren && Desktop neu laden"), this);
     m_refreshCacheButton->setMinimumHeight(44);
     m_refreshCacheButton->setToolTip(tr(
-        "Führt gtk-update-icon-cache aus,\n"
-        "damit installierte Icons beim nächsten Login sichtbar werden."));
+        "Führt gtk-update-icon-cache aus und lädt den Desktop-Manager neu,\n"
+        "damit installierte Icons sofort sichtbar werden."));
     connect(m_refreshCacheButton, &QPushButton::clicked, this, &IconConverter::onRefreshCache);
     mainLayout->addWidget(m_refreshCacheButton);
 
@@ -180,22 +180,14 @@ void IconConverter::onSelectSource()
     }
 }
 
-void IconConverter::setPreferredName(const QString &name)
-{
-    m_preferredName = name.trimmed().toLower().replace(' ', '-');
-}
-
 void IconConverter::onConvertAndInstall()
 {
     if (m_sourcePath.isEmpty())
         return;
 
     bool ok = false;
-    // Bevorzuge den bereits gesetzten Icon-Namen aus dem Desktop-Eintrag;
-    // falle auf den Dateinamen zurück wenn kein Name gesetzt ist.
-    const QString fileBaseName = QFileInfo(m_sourcePath).completeBaseName()
+    const QString defaultName = QFileInfo(m_sourcePath).completeBaseName()
         .toLower().replace(' ', '-');
-    const QString defaultName = m_preferredName.isEmpty() ? fileBaseName : m_preferredName;
     const QString baseName = QInputDialog::getText(
         this,
         tr("Icon-Name"),
@@ -250,14 +242,11 @@ void IconConverter::onConvertAndInstall()
     if (allOk) {
         m_installedIconName = name;
         emit iconInstalled(name);
-        // Nur Cache-Update, kein automatischer Desktop-Neustart
-        const QString hicolorPath = QDir::homePath() + "/.local/share/icons/hicolor";
-        QProcess::execute("gtk-update-icon-cache", { "-f", "-t", hicolorPath });
+        // Cache automatisch nach erfolgreicher Installation aktualisieren
+        onRefreshCache();
         QMessageBox::information(this, tr("Fertig"),
-            tr("Icon '%1' erfolgreich installiert.\n"
-               "Pfad: ~/.local/share/icons/hicolor/\n\n"
-               "Tipp: 'Icon-Cache aktualisieren'-Button drücken,\n"
-               "damit Icons beim nächsten Login sichtbar sind.").arg(name));
+            tr("Icon '%1' erfolgreich installiert und Cache aktualisiert.\n"
+               "Pfad: ~/.local/share/icons/hicolor/").arg(name));
     } else {
         QMessageBox::warning(this, tr("Teilweise Fehler"),
             tr("Einige Icons konnten nicht installiert werden.\n"
@@ -378,20 +367,41 @@ bool IconConverter::installPngs(const QString &baseName)
 
 void IconConverter::onRefreshCache()
 {
+    // 1. gtk-update-icon-cache für das User-Hicolor-Theme
     const QString hicolorPath = QDir::homePath() + "/.local/share/icons/hicolor";
     QProcess cacheProcess;
-    cacheProcess.start("gtk-update-icon-cache", { "-f", "-t", hicolorPath });
+    cacheProcess.start("gtk-update-icon-cache",
+                       { "-f", "-t", hicolorPath });
     const bool cacheOk = cacheProcess.waitForFinished(5000)
                          && cacheProcess.exitCode() == 0;
 
+    // 2. Desktop-Manager neu laden (DE-abhängig)
+    //    LXDE/PCManFM: Desktop kurz aus- und wieder einschalten
+    //    XFCE: xfdesktop --reload
+    //    GNOME/KDE: keine Aktion nötig (inotify erkennt Änderungen)
+    QString refreshMsg;
+    const QString de = qgetenv("XDG_CURRENT_DESKTOP").toLower();
+
+    if (de.contains("lxde") || de.contains("lxqt") ||
+        QProcess::execute("pgrep", {"-x", "pcmanfm"}) == 0) {
+        // PCManFM-Desktop kurz neu starten
+        QProcess::startDetached("bash",
+            { "-c", "pcmanfm --desktop-off; sleep 0.3; pcmanfm --desktop &" });
+        refreshMsg = tr("PCManFM-Desktop wurde neu gestartet.");
+    } else if (de.contains("xfce")) {
+        QProcess::startDetached("xfdesktop", { "--reload" });
+        refreshMsg = tr("Xfdesktop wurde neu geladen.");
+    } else {
+        refreshMsg = tr("Desktop-Neustart nicht nötig (GNOME/KDE erkennt Änderungen automatisch).");
+    }
+
     if (cacheOk) {
-        QMessageBox::information(this, tr("Fertig"),
-            tr("Icon-Cache erfolgreich aktualisiert.\n"
-               "Icons werden beim nächsten Login sichtbar."));
+        QMessageBox::information(this, tr("Cache aktualisiert"),
+            tr("Icon-Cache erfolgreich aktualisiert.\n") + refreshMsg);
     } else {
         QMessageBox::warning(this, tr("Cache-Warnung"),
             tr("gtk-update-icon-cache schlug fehl oder ist nicht installiert.\n"
-               "Icons werden spätestens beim nächsten Login sichtbar."));
+               "Icons werden beim nächsten Login sichtbar.\n\n") + refreshMsg);
     }
 }
 

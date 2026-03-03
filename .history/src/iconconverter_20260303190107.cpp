@@ -126,11 +126,11 @@ void IconConverter::setupUi()
     connect(m_installButton, &QPushButton::clicked, this, &IconConverter::onConvertAndInstall);
     mainLayout->addWidget(m_installButton);
 
-    m_refreshCacheButton = new QPushButton(tr("Icon-Cache aktualisieren"), this);
+    m_refreshCacheButton = new QPushButton(tr("Icon-Cache aktualisieren && Desktop neu laden"), this);
     m_refreshCacheButton->setMinimumHeight(44);
     m_refreshCacheButton->setToolTip(tr(
-        "Führt gtk-update-icon-cache aus,\n"
-        "damit installierte Icons beim nächsten Login sichtbar werden."));
+        "Führt gtk-update-icon-cache aus und lädt den Desktop-Manager neu,\n"
+        "damit installierte Icons sofort sichtbar werden."));
     connect(m_refreshCacheButton, &QPushButton::clicked, this, &IconConverter::onRefreshCache);
     mainLayout->addWidget(m_refreshCacheButton);
 
@@ -257,7 +257,7 @@ void IconConverter::onConvertAndInstall()
             tr("Icon '%1' erfolgreich installiert.\n"
                "Pfad: ~/.local/share/icons/hicolor/\n\n"
                "Tipp: 'Icon-Cache aktualisieren'-Button drücken,\n"
-               "damit Icons beim nächsten Login sichtbar sind.").arg(name));
+               "um Icons sofort im Desktop sichtbar zu machen.").arg(name));
     } else {
         QMessageBox::warning(this, tr("Teilweise Fehler"),
             tr("Einige Icons konnten nicht installiert werden.\n"
@@ -378,16 +378,40 @@ bool IconConverter::installPngs(const QString &baseName)
 
 void IconConverter::onRefreshCache()
 {
+    // 1. gtk-update-icon-cache für das User-Hicolor-Theme
     const QString hicolorPath = QDir::homePath() + "/.local/share/icons/hicolor";
     QProcess cacheProcess;
-    cacheProcess.start("gtk-update-icon-cache", { "-f", "-t", hicolorPath });
+    cacheProcess.start("gtk-update-icon-cache",
+                       { "-f", "-t", hicolorPath });
     const bool cacheOk = cacheProcess.waitForFinished(5000)
                          && cacheProcess.exitCode() == 0;
 
+    // 2. Desktop-Manager-Reload nur auf explizite Nachfrage
+    const int btn = QMessageBox::question(this, tr("Desktop neu laden?"),
+        tr("Icon-Cache wurde aktualisiert.\n\n"
+           "Soll der Desktop-Manager jetzt neu geladen werden,\n"
+           "damit Icons sofort sichtbar werden?\n\n"
+           "Hinweis: Desktop-Neustart kann Positionen / Hintergrund kurz flackern lassen."),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+
+    if (btn == QMessageBox::Yes) {
+        const QString de = qgetenv("XDG_CURRENT_DESKTOP").toLower();
+
+        if (de.contains("lxde") || de.contains("lxqt") ||
+            QProcess::execute("pgrep", {"-x", "pcmanfm"}) == 0) {
+            // Sanfter Reload via SIGHUP statt Desktop-Off/On
+            QProcess::startDetached("bash",
+                { "-c", "killall -HUP pcmanfm 2>/dev/null || pcmanfm --desktop &" });
+        } else if (de.contains("xfce")) {
+            QProcess::startDetached("xfdesktop", { "--reload" });
+        }
+        // GNOME/KDE: keine Aktion nötig (inotify erkennt Änderungen automatisch)
+    }
+
     if (cacheOk) {
         QMessageBox::information(this, tr("Fertig"),
-            tr("Icon-Cache erfolgreich aktualisiert.\n"
-               "Icons werden beim nächsten Login sichtbar."));
+            tr("Icon-Cache erfolgreich aktualisiert."));
     } else {
         QMessageBox::warning(this, tr("Cache-Warnung"),
             tr("gtk-update-icon-cache schlug fehl oder ist nicht installiert.\n"

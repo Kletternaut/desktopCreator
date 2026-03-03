@@ -17,63 +17,6 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QInputDialog>
-#include <QDir>
-#include <QFileInfo>
-
-// Sucht ein Icon zuerst direkt auf der Platte in den hicolor-Verzeichnissen,
-// um Qt's internen (veralteten) Theme-Cache zu umgehen.
-static QPixmap resolveIconPixmap(const QString &iconName, int size)
-{
-    if (iconName.isEmpty())
-        return {};
-
-    if (iconName.toLower().endsWith(".svg")) {
-        QSvgRenderer r(iconName);
-        if (r.isValid()) {
-            QPixmap pix(size, size);
-            pix.fill(Qt::transparent);
-            QPainter p(&pix);
-            r.render(&p);
-            return pix;
-        }
-    }
-
-    if (iconName.contains(QLatin1Char('/')) || iconName.contains(QLatin1Char('.'))) {
-        QPixmap pix(iconName);
-        if (!pix.isNull()) return pix;
-    }
-
-    const QStringList bases = {
-        QDir::homePath() + QStringLiteral("/.local/share/icons/hicolor"),
-        QStringLiteral("/usr/local/share/icons/hicolor"),
-        QStringLiteral("/usr/share/icons/hicolor")
-    };
-    const QString sizePart = QStringLiteral("%1x%1/apps/").arg(size);
-    for (const QString &base : bases) {
-        const QString pngPath = base + QLatin1Char('/') + sizePart + iconName + QStringLiteral(".png");
-        if (QFileInfo::exists(pngPath)) {
-            QPixmap pix(pngPath);
-            if (!pix.isNull()) return pix;
-        }
-        const QString svgPath = base + QStringLiteral("/scalable/apps/") + iconName + QStringLiteral(".svg");
-        if (QFileInfo::exists(svgPath)) {
-            QSvgRenderer r(svgPath);
-            if (r.isValid()) {
-                QPixmap pix(size, size);
-                pix.fill(Qt::transparent);
-                QPainter p(&pix);
-                r.render(&p);
-                return pix;
-            }
-        }
-    }
-
-    const QIcon ti = QIcon::fromTheme(iconName);
-    if (!ti.isNull())
-        return ti.pixmap(size, size);
-
-    return {};
-}
 
 // Bekannte Desktop-Umgebungen für OnlyShowIn / NotShowIn
 const QStringList DesktopEditor::kDesktopEnvironments = {
@@ -154,8 +97,23 @@ QWidget *DesktopEditor::createGeneralTab()
     m_iconPreview->setFixedSize(64, 64);
     m_iconPreview->setFrameShape(QFrame::StyledPanel);
     m_iconPreview->setAlignment(Qt::AlignCenter);
-    connect(m_iconEdit, &QLineEdit::textChanged, this, [this](const QString &name) {
-        const QPixmap pix = resolveIconPixmap(name, 64);
+    connect(m_iconEdit, &QLineEdit::textChanged, this, [this](const QString &path) {
+        QPixmap pix;
+        if (!path.isEmpty()) {
+            if (path.toLower().endsWith(".svg")) {
+                QSvgRenderer r(path);
+                if (r.isValid()) {
+                    pix = QPixmap(64, 64);
+                    pix.fill(Qt::transparent);
+                    QPainter p(&pix);
+                    r.render(&p);
+                }
+            } else {
+                pix = QPixmap(path);
+                if (pix.isNull())
+                    pix = QIcon::fromTheme(path).pixmap(64, 64);
+            }
+        }
         if (!pix.isNull())
             m_iconPreview->setPixmap(pix.scaled(64, 64, Qt::KeepAspectRatio, Qt::SmoothTransformation));
         else

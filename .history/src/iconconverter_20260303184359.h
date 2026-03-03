@@ -36,13 +36,6 @@ public:
     /** @brief Gibt den zuletzt installierten Icon-Namen zurück (ohne Pfad/Extension). */
     QString installedIconName() const { return m_installedIconName; }
 
-    /**
-     * @brief Setzt den bevorzugten Icon-Namen (aus dem Desktop-Eintrag).
-     * Wird als Vorschlagswert im Installations-Dialog verwendet.
-     * @param name  Icon-Name ohne Pfad/Extension, z.B. "notepadplusplus".
-     */
-    void setPreferredName(const QString &name);
-
 signals:
     /** @brief Wird after der Installation ausgelöst, enthält den Icon-Namen. */
     void iconInstalled(const QString &iconName);
@@ -89,7 +82,6 @@ private:
 
     QString m_sourcePath;
     QString m_installedIconName;
-    QString m_preferredName;
 
     // UI-Elemente
     QLabel        *m_dropLabel       = nullptr;
