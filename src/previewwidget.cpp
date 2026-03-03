@@ -106,6 +106,7 @@ void PreviewWidget::setupUi()
     m_nameLabel->setFont(f);
 
     iconLayout->addWidget(m_iconLabel, 0, Qt::AlignHCenter);
+    iconLayout->addSpacing(14);
     iconLayout->addWidget(m_nameLabel, 0, Qt::AlignHCenter);
     mainLayout->addWidget(iconGroup);
 
