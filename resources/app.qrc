@@ -1,0 +1,13 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/">
+    <file>icons/app-icon.svg</file>
+    <file>icons/document-new.svg</file>
+    <file>icons/document-open.svg</file>
+    <file>icons/document-save.svg</file>
+    <file>icons/document-save-as.svg</file>
+    <file>icons/system-software-install.svg</file>
+    <file>icons/emblem-system.svg</file>
+    <file>icons/help-about.svg</file>
+    <file>images/drag-drop-hint.svg</file>
+</qresource>
+</RCC>

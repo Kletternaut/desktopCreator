@@ -1,0 +1,9 @@
+desktopcreator (1.0.0-1) bookworm; urgency=low
+
+  * Initial release.
+  * Full freedesktop.org Desktop Entry Specification 1.5 support.
+  * Icon conversion pipeline for all hicolor standard sizes.
+  * Live preview of .desktop entries.
+  * German and English translations.
+
+ -- Kletternaut <https://github.com/Kletternaut>  Tue, 03 Mar 2026 00:00:00 +0000

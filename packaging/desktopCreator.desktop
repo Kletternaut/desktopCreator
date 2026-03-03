@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=.desktopCreator
+Name[de]=.desktopCreator
+GenericName=Desktop Entry Editor
+GenericName[de]=Desktop-Eintrag-Editor
+Comment=Create and manage .desktop files (freedesktop.org Desktop Entry Spec 1.5)
+Comment[de]=.desktop-Dateien grafisch erstellen und verwalten (freedesktop.org-Standard)
+Icon=desktopCreator
+Exec=desktopCreator %F
+Terminal=false
+Categories=Settings;DesktopSettings;Utility;
+MimeType=application/x-desktop;
+Keywords=desktop;entry;launcher;shortcut;freedesktop;icon;

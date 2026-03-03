@@ -1,0 +1,22 @@
+Source: desktopcreator
+Section: utils
+Priority: optional
+Maintainer: Kletternaut <https://github.com/Kletternaut>
+Build-Depends: debhelper (>= 12), cmake (>= 3.16), qt5-default | qtbase5-dev, qtsvg5-dev, libqt5svg5-dev, libqt5xml5-dev, qttools5-dev
+Standards-Version: 4.5.0
+Homepage: https://github.com/Kletternaut/desktopCreator
+
+Package: desktopcreator
+Architecture: arm64
+Depends: ${shlibs:Depends}, ${misc:Depends}, libqt5widgets5 (>= 5.15), libqt5svg5 (>= 5.15), libqt5xml5 (>= 5.15)
+Description: Grafischer .desktop-Datei-Editor für den Raspberry Pi
+ RPi Desktop Creator ermöglicht das grafische Erstellen, Bearbeiten
+ und Verwalten von .desktop-Dateien (freedesktop.org Desktop Entry
+ Specification 1.5) inklusive Icon-Konvertierung in alle Standard-Größen.
+ .
+ Features:
+  - Vollständiger Desktop Entry Spec 1.5 Editor
+  - Icon-Konvertierung in alle hicolor-Standardgrößen
+  - Live-Vorschau des Desktop-Eintrags
+  - Unterstützung für Sprachvarianten (Lokalisierung)
+  - Installation für Benutzer und systemweit
